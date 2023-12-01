@@ -2,8 +2,6 @@
 
 一个将 *OpenAI* 的 *DALL-E* 接口转化为对话 *CHAT* 接口的 *Python* 微代理
 
----
-
 ### 功能
 
 - 支持`OpenAI-API`: `v1/chat/completions`
@@ -11,6 +9,8 @@
 - 兼容`chatgpt-next-web`生成标题
 
 ### 使用
+
+> 需要将代码中的`OPENAI_BASE_URL`修改为自己的代理
 
 ```python
 import requests
