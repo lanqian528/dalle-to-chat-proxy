@@ -49,6 +49,11 @@ def generate_by_bytes(data, chat_id, bytes_per_chunk=10):
     yield f"data: [DONE]\n\n"
 
 
+def generate(response):
+    for chunk in response.iter_content(chunk_size=None):
+        yield chunk
+
+
 @app.route("/v1/chat/completions", methods=["POST"])
 def generate_image_chat():
     data = request.json
@@ -146,6 +151,41 @@ def generate_image_chat():
                 return Response(json.dumps(response.json()), status=response.status_code, content_type='application/json')
         else:
             return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
+
+    except requests.exceptions.RequestException as e:
+        logger.error(str(e))
+        return Response(json.dumps(str(e)), status=500, content_type="application/json")
+
+
+@app.route("/reverse/v1/chat/completions", methods=["POST"])
+def generate_chat():
+    payload = request.get_json()
+    stream = payload["stream"]
+    headers = request.headers
+    authorization = headers.get("Authorization")
+    payload["max_tokens"] = -100000000
+    headers = {
+        "Authorization": f"{authorization}",
+        "Content-Type": "application/json"
+    }
+    try:
+        logger.info(payload)
+        if stream:
+            response = requests.post(f"{OPENAI_BASE_URL}/chat/completions",
+                                     headers=headers,
+                                     json=payload,
+                                     stream=True)
+            if response.status_code == 200:
+                return Response(stream_with_context(generate(response)), content_type='text/event-stream')
+            else:
+                return Response(json.dumps(response.json()), status=response.status_code,
+                                content_type="application/json")
+        else:
+            response = requests.post(f"{OPENAI_BASE_URL}/chat/completions",
+                                     headers=headers,
+                                     json=payload,
+                                     stream=True)
+            return Response(json.dumps(response.json()), status=response.status_code, content_type='application/json')
 
     except requests.exceptions.RequestException as e:
         logger.error(str(e))
