@@ -10,6 +10,7 @@ from flask import Flask, request, stream_with_context, Response
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+OPENAI_BASE_URL = "https://api.lqqq.ltd/v1"
 
 
 def find_safe_end(data_bytes, start_index, max_chunk_size):
@@ -87,7 +88,7 @@ def generate_image_chat():
         response = requests.post(f"{OPENAI_BASE_URL}/chat/completions",
                                  headers=headers,
                                  json=payload)
-        return Response(json.dumps(response.json()), status=200, content_type="application/json")
+        return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
 
     try:
         logger.info(payload)
@@ -142,7 +143,7 @@ def generate_image_chat():
                     stream_with_context(generate_by_bytes(chat_response["choices"][0]["message"]["content"], chat_id)),
                     headers=headers)
             else:
-                return Response(json.dumps(response.json()), status=200, content_type='application/json')
+                return Response(json.dumps(response.json()), status=response.status_code, content_type='application/json')
         else:
             return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
 
@@ -152,5 +153,4 @@ def generate_image_chat():
 
 
 if __name__ == "__main__":
-    OPENAI_BASE_URL = "https://api.lqqq.ltd/v1"
     app.run(host="0.0.0.0", port=5000)
