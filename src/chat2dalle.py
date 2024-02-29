@@ -47,13 +47,13 @@ def chat2dalle():
 
         if response.status_code == 200:
             content = response.json()["choices"][0]["message"]["content"]
-            prompt_match = re.search(r'```json dalle-prompt\s*\n\s*(\{[\s\S]*?\})\s*\n```', content, re.DOTALL)
+            prompt_match = re.search(r"```.*\n\s*(\{[\s\S]*?\})\s*\n```", content, re.DOTALL)
             if prompt_match:
                 revised_prompt = json.loads(prompt_match.group(1))["prompt"]
             else:
                 revised_prompt = prompt
 
-            url_match = re.search(r'!\[image1\]\((.*?)\)', content)
+            url_match = re.search(r'!\[image.*\]\((.*?)\)', content)
             if url_match:
                 url = url_match.group(1)
             else:
