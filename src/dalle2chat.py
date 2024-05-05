@@ -6,10 +6,9 @@ import time
 import requests
 from flask import request, Response, stream_with_context
 
-from src.Logger import Logger
+from src.Logger import logger
+from src.config import openai_base_url
 from src.stream import generate_by_bytes
-
-OPENAI_BASE_URL = "https://api.lqqq.ltd/v1"
 
 
 def dalle2chat():
@@ -22,10 +21,13 @@ def dalle2chat():
     size = data.get("size", "1024x1024")
     quality = data.get("quality", "standard")
 
+    if not messages:
+        return Response(json.dumps({"error": "No messages found in the request"}), status=400, content_type="application/json")
+
     try:
-        prompt = next((msg["content"] for msg in reversed(messages) if msg["role"] == "user"), None)
+        prompt = next((msg["content"] for msg in reversed(messages) if msg["role"] == "user"), '')
     except:
-        prompt = None
+        prompt = ''
 
     headers = {
         "Authorization": f"{authorization}",
@@ -42,15 +44,15 @@ def dalle2chat():
     if "请直接返回“闲聊”" in prompt:
         payload = request.get_json()
         payload["model"] = "gpt-3.5-turbo"
-        response = requests.post(f"{OPENAI_BASE_URL}/chat/completions",
+        response = requests.post(f"{openai_base_url}/chat/completions",
                                  headers=headers,
                                  json=payload)
-        Logger.info(payload)
-        Logger.info(response.json())
+        logger.info(payload)
+        logger.info(response.json())
         return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
 
     try:
-        response = requests.post(f"{OPENAI_BASE_URL}/images/generations",
+        response = requests.post(f"{openai_base_url}/images/generations",
                                  headers=headers,
                                  json=payload,
                                  stream=True)
@@ -73,6 +75,7 @@ def dalle2chat():
                 "object": "chat.completion",
                 "created": int(time.time()),
                 "model": model,
+                "system_fingerprint": "fp_3bc1b5746c",
                 "choices": [
                     {
                         "index": 0,
@@ -93,8 +96,8 @@ def dalle2chat():
                     "total_tokens": 2 * int(size.split('x')[0])
                 }
             }
-            Logger.info(payload)
-            Logger.info(chat_response)
+            logger.info(payload)
+            logger.info(chat_response)
             if stream:
                 headers = {
                     'Cache-Control': 'no-cache',
@@ -108,10 +111,10 @@ def dalle2chat():
                 return Response(json.dumps(chat_response), status=response.status_code,
                                 content_type='application/json')
         else:
-            Logger.info(payload)
-            Logger.info(response.json())
+            logger.info(payload)
+            logger.info(response.json())
             return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
 
     except requests.exceptions.RequestException as e:
-        Logger.error(str(e))
+        logger.error(str(e))
         return Response(json.dumps(str(e)), status=500, content_type="application/json")

@@ -7,9 +7,8 @@ import time
 import requests
 from flask import request, Response
 
-from src.Logger import Logger
-
-OPENAI_BASE_URL = "https://api.lqqq.ltd/v1"
+from src.Logger import logger
+from src.config import openai_base_url
 
 
 def chat2dalle():
@@ -20,6 +19,9 @@ def chat2dalle():
     size = data.get("size", "1024x1024")
     quality = data.get("quality", "standard")
     authorization = headers.get("Authorization")
+
+    if not prompt:
+        return Response(json.dumps({"error": "No prompt found in the request"}), status=400, content_type="application/json")
 
     headers = {
         "Authorization": f"{authorization}",
@@ -41,7 +43,7 @@ def chat2dalle():
     }
 
     try:
-        response = requests.post(f"{OPENAI_BASE_URL}/chat/completions",
+        response = requests.post(f"{openai_base_url}/chat/completions",
                                  headers=headers,
                                  json=payload)
 
@@ -73,8 +75,8 @@ def chat2dalle():
                         "code": "content_policy_violation"
                     }
                 }
-                Logger.info(payload)
-                Logger.info(error_response)
+                logger.info(payload)
+                logger.info(error_response)
                 return Response(json.dumps(error_response), status=200, content_type="application/json")
 
             image_response = {
@@ -86,13 +88,13 @@ def chat2dalle():
                     }
                 ]
             }
-            Logger.info(payload)
-            Logger.info(image_response)
+            logger.info(payload)
+            logger.info(image_response)
             return Response(json.dumps(image_response), status=200, content_type="application/json")
         else:
-            Logger.info(payload)
-            Logger.info(response.json())
+            logger.info(payload)
+            logger.info(response.json())
             return Response(json.dumps(response.json()), status=response.status_code, content_type="application/json")
     except requests.exceptions.RequestException as e:
-        Logger.error(str(e))
+        logger.error(str(e))
         return Response(json.dumps(str(e)), status=500, content_type="application/json")

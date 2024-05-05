@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  chat2api:
+    image: lanqian528/dalle2chat:latest
+    container_name: dalle2chat
+    restart: unless-stopped
+    ports:
+      - '5007:5007'
+    environment:
+      - OPENAI_BASE_URL=https://api.example.com/v1
